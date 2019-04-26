@@ -75,6 +75,8 @@ func main() {
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	http.HandleFunc("/api/restaurants/overview/", newSessionHandler.cassandraForwarder)
+	http.HandleFunc("/loaderio-aa7f4472cf256de11e8e791c7314f1a1", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./loaderio/loaderio-aa7f4472cf256de11e8e791c7314f1a1.txt")
+	})
 	log.Fatal(http.ListenAndServe(":3002", nil))
-
 }
