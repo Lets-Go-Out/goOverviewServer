@@ -75,6 +75,6 @@ func main() {
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 	http.HandleFunc("/api/restaurants/overview/", newSessionHandler.cassandraForwarder)
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	log.Fatal(http.ListenAndServe(":3002", nil))
 
 }
