@@ -85,9 +85,11 @@ func main() {
 
 	cluster := gocql.NewCluster("13.57.10.233", "52.53.200.196", "18.144.42.11", "54.183.167.29", "13.57.26.145", "13.57.5.151")
 	cluster.Keyspace = "restaurants"
-	cluster.ProtoVersion = 4
+	cluster.ProtoVersion = 3
 	cluster.Timeout = 1500 * time.Millisecond
 	cluster.ConnectTimeout = 1500 * time.Millisecond
+	cluster.NumConns = 4
+	cluster.SocketKeepalive = 10 * time.Second
 	log.Println("HERE")
 	session, err := cluster.CreateSession()
 	if err != nil {
@@ -117,6 +119,6 @@ func main() {
 // server ec2-13-57-219-171.us-west-1.compute.amazonaws.com;
 // server ec2-52-53-129-248.us-west-1.compute.amazonaws.com;
 
-// git fetch --all && git reset --hard origin/master && go build && ./goOverviewServer
+// cd goOverviewServer && git fetch --all && git reset --hard origin/master && go build && ./goOverviewServer
 
 // cd goOverviewServer && ./goOverviewServer
