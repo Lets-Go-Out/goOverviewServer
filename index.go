@@ -44,7 +44,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		if redisErr != nil || redisErr == redis.Nil {
 			restaurant, dbErr := getOneById(sh.Session, id)
 			if dbErr != nil || len(restaurant) == 0 {
-				log.Println(dbErr, restaurant)
 				w.Write([]byte("Cannot find restaurant with id: " + id))
 			} else {
 				resJSON, jsonErr := json.Marshal(restaurant)
@@ -55,13 +54,11 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 					if err != nil {
 						log.Println(err)
 					}
-					log.Println("set cache")
 					w.Header().Set("Content-Type", "application/json")
 					w.Write(resJSON)
 				}
 			}
 		} else {
-			log.Println("used cache")
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(val))
 		}
