@@ -82,12 +82,7 @@ func main() {
 	pong, err := redisClient.Ping().Result()
 	log.Println(pong, err)
 
-	cluster := gocql.NewCluster("13.56.161.22",
-		"54.153.94.139",
-		"13.56.248.92",
-		"54.183.65.58",
-		"54.219.182.29",
-		"13.56.232.185")
+	cluster := gocql.NewCluster("13.57.10.233", "52.53.200.196", "18.144.42.11", "54.183.167.29", "13.57.26.145", "13.57.5.151")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 4
 	log.Println("HERE")
