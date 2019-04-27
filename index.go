@@ -54,6 +54,7 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 				resJSON, jsonErr := json.Marshal(restaurant)
 				if jsonErr != nil {
 					w.WriteHeader(http.StatusNotFound)
+					w.Write([]byte(jsonErr.Error()))
 				} else {
 					err := sh.RedisClient.Set(id, resJSON, 0).Err()
 					if err != nil {
@@ -92,6 +93,7 @@ func main() {
 	cluster.Timeout = 1500 * time.Millisecond
 	cluster.ConnectTimeout = 1500 * time.Millisecond
 	cluster.ReconnectInterval = 1 * time.Second
+	cluster.Consistency = 0x01
 	cluster.NumConns = 8
 	// cluster.SocketKeepalive = 10 * time.Second
 	session, err := cluster.CreateSession()
