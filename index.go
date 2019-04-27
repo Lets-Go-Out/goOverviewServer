@@ -27,7 +27,6 @@ func getOneById(session *gocql.Session, id string) ([]map[string]interface{}, er
 	if closeErr := iter.Close(); closeErr != nil {
 		log.Println(closeErr)
 	}
-	log.Println(restaurant)
 	q.Release()
 	return restaurant, sliceErr
 }
