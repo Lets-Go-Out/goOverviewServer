@@ -94,12 +94,17 @@ func main() {
 		"13.56.232.185")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 4
+	log.Println("HERE")
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Print(err)
 	} else {
 		log.Println("Connection successful")
 	}
+	defer func() {
+		session.Close()
+		log.Println("session closed")
+	}()
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
