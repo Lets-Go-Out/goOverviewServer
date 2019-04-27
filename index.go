@@ -18,8 +18,8 @@ type SessionHandler struct {
 }
 
 func getOneById(session *gocql.Session, id string) ([]map[string]interface{}, error) {
-	iter := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id).Iter()
-
+	q := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id)
+	iter := q.Iter()
 	restaurant, sliceErr := iter.SliceMap()
 	if sliceErr != nil {
 		log.Println(sliceErr)
@@ -28,6 +28,7 @@ func getOneById(session *gocql.Session, id string) ([]map[string]interface{}, er
 		log.Println(closeErr)
 	}
 	log.Println(restaurant)
+	q.Release()
 	return restaurant, sliceErr
 }
 func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Request) {
