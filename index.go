@@ -91,6 +91,7 @@ func main() {
 	cluster.ProtoVersion = 3
 	cluster.Timeout = 1500 * time.Millisecond
 	cluster.ConnectTimeout = 1500 * time.Millisecond
+	cluster.ReconnectInterval = 1 * time.Second
 	cluster.NumConns = 8
 	// cluster.SocketKeepalive = 10 * time.Second
 	session, err := cluster.CreateSession()
