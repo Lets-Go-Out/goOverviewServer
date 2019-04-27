@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
+	newrelic "github.com/newrelic/go-agent"
 )
 
 type SessionHandler struct {
@@ -66,6 +67,11 @@ func routeErrorHandler(w http.ResponseWriter, r *http.Request, status int) {
 	fmt.Fprint(w, "Not a route, try again")
 }
 func main() {
+	config := newrelic.NewConfig("goOverviewService", "bc4034d18b0b4c25d08ad3173e8fc39a28186972")
+	app, err := newrelic.NewApplication(config)
+	if err != nil {
+		log.Print(err)
+	}
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
@@ -88,10 +94,10 @@ func main() {
 		log.Println("Connection successful")
 	}
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
-	http.Handle("/", http.FileServer(http.Dir("./static")))
-	http.HandleFunc("/api/restaurants/overview/", newSessionHandler.cassandraForwarder)
-	http.HandleFunc("/loaderio-aa7f4472cf256de11e8e791c7314f1a1.txt", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-aa7f4472cf256de11e8e791c7314f1a1.txt", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./loaderio/loaderio-aa7f4472cf256de11e8e791c7314f1a1.txt")
-	})
+	}))
 	log.Fatal(http.ListenAndServe(":3002", nil))
 }
