@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 
 	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
@@ -14,32 +16,41 @@ type SessionHandler struct {
 	RedisClient *redis.Client
 }
 
-func getOneById(session *gocql.Session, id string) []map[string]interface{} {
+func getOneById(session *gocql.Session, id string) ([]map[string]interface{}, error) {
 	res, err := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id).Iter().SliceMap()
 	if err != nil {
 		log.Println("Error: ", err.Error())
 	}
-	return res
+	return res, err
 }
 func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Request) {
+	regex, _ := regexp.Compile("/api/restaurants/overview/([0-9]{0,})")
+	if regex.MatchString(r.URL.Path) == false {
+		routeErrorHandler(w, r, http.StatusNotFound)
+		return
+	}
 	id := r.URL.Path[len("/api/restaurants/overview/"):]
 	switch r.Method {
 	case http.MethodGet:
 		val, redisErr := sh.RedisClient.Get(id).Result()
-		if redisErr != nil {
-			restaurant := getOneById(sh.Session, id)
-			resJSON, jsonErr := json.Marshal(restaurant)
-			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotFound)
+		if redisErr != nil || redisErr == redis.Nil {
+			restaurant, dbErr := getOneById(sh.Session, id)
+			if dbErr != nil || len(restaurant) == 0 {
+				log.Println(dbErr, restaurant)
 				w.Write([]byte("Cannot find restaurant with id: " + id))
 			} else {
-				err := sh.RedisClient.Set(id, resJSON, 0).Err()
-				if err != nil {
-					log.Println(err)
+				resJSON, jsonErr := json.Marshal(restaurant)
+				if jsonErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+				} else {
+					err := sh.RedisClient.Set(id, resJSON, 0).Err()
+					if err != nil {
+						log.Println(err)
+					}
+					log.Println("set cache")
+					w.Header().Set("Content-Type", "application/json")
+					w.Write(resJSON)
 				}
-				log.Println("set cache")
-				w.Header().Set("Content-Type", "application/json")
-				w.Write(resJSON)
 			}
 		} else {
 			log.Println("used cache")
@@ -49,6 +60,10 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 	case http.MethodPost:
 
 	}
+}
+func routeErrorHandler(w http.ResponseWriter, r *http.Request, status int) {
+	w.WriteHeader(status)
+	fmt.Fprint(w, "Not a route, try again")
 }
 func main() {
 	redisClient := redis.NewClient(&redis.Options{
