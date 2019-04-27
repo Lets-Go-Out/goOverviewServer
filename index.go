@@ -90,8 +90,8 @@ func main() {
 	cluster := gocql.NewCluster("13.57.10.233", "52.53.200.196", "18.144.42.11", "54.183.167.29", "13.57.26.145", "13.57.5.151")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 3
-	cluster.Timeout = 1500 * time.Millisecond
-	cluster.ConnectTimeout = 1500 * time.Millisecond
+	cluster.Timeout = 5000 * time.Millisecond
+	cluster.ConnectTimeout = 5000 * time.Millisecond
 	cluster.ReconnectInterval = 1 * time.Second
 	cluster.Consistency = 0x01
 	cluster.NumConns = 8
