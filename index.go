@@ -43,7 +43,12 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		val, redisErr := sh.RedisClient.Get(id).Result()
 		if redisErr != nil || redisErr == redis.Nil {
 			restaurant, dbErr := getOneById(sh.Session, id)
-			if dbErr != nil || len(restaurant) == 0 {
+			if dbErr != nil {
+				w.WriteHeader(http.StatusRequestTimeout)
+				w.Write([]byte(dbErr.Error()))
+				log.Println(dbErr.Error())
+			} else if len(restaurant) == 0 {
+				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte("Cannot find restaurant with id: " + id))
 			} else {
 				resJSON, jsonErr := json.Marshal(restaurant)
@@ -62,8 +67,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(val))
 		}
-	case http.MethodPost:
-
 	}
 }
 func routeErrorHandler(w http.ResponseWriter, r *http.Request, status int) {
@@ -88,9 +91,8 @@ func main() {
 	cluster.ProtoVersion = 3
 	cluster.Timeout = 1500 * time.Millisecond
 	cluster.ConnectTimeout = 1500 * time.Millisecond
-	cluster.NumConns = 4
-	cluster.SocketKeepalive = 10 * time.Second
-	log.Println("HERE")
+	cluster.NumConns = 8
+	// cluster.SocketKeepalive = 10 * time.Second
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Print(err)
