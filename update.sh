@@ -1,1 +1,1 @@
-git fetch --all && git reset --hard && go build && ./GoOverviewServer
+git fetch --all && git reset --hard && go build && ./goOverviewServer
