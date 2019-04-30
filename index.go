@@ -105,18 +105,18 @@ func main() {
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
-	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-68bb5d3349374cb02c1530b83e9f26ab.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./loaderio/loaderio-68bb5d3349374cb02c1530b83e9f26ab.txt")
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-cbeabceba201153e739d61f39a94004c.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./loaderio/loaderio-cbeabceba201153e739d61f39a94004c.txt")
 	}))
 	log.Fatal(http.ListenAndServe(":3002", nil))
 }
 
-// server ec2-13-57-179-6.us-west-1.compute.amazonaws.com;
-// server ec2-13-56-12-66.us-west-1.compute.amazonaws.com;
-// server ec2-54-183-212-2.us-west-1.compute.amazonaws.com;
-// server ec2-18-144-43-249.us-west-1.compute.amazonaws.com;
-// server ec2-13-57-42-39.us-west-1.compute.amazonaws.com;
-// server ec2-54-219-183-253.us-west-1.compute.amazonaws.com;
+// server ec2-54-215-168-121.us-west-1.compute.amazonaws.com;
+// server ec2-13-56-77-85.us-west-1.compute.amazonaws.com
+// server ec2-18-144-62-109.us-west-1.compute.amazonaws.com;
+// server ec2-52-53-246-139.us-west-1.compute.amazonaws.com;
+// server ec2-18-144-70-226.us-west-1.compute.amazonaws.com;
+// server ec2-54-219-170-43.us-west-1.compute.amazonaws.com;
 // server ec2-13-57-219-171.us-west-1.compute.amazonaws.com;
 // server ec2-52-53-129-248.us-west-1.compute.amazonaws.com;
 
