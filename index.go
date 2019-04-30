@@ -108,6 +108,9 @@ func main() {
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-cbeabceba201153e739d61f39a94004c.txt", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./loaderio/loaderio-cbeabceba201153e739d61f39a94004c.txt")
 	}))
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-04ab469c903d910e3e638cc4ebc4a326.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./loaderio/loaderio-04ab469c903d910e3e638cc4ebc4a326.txt")
+	}))
 	log.Fatal(http.ListenAndServe(":3002", nil))
 }
 
