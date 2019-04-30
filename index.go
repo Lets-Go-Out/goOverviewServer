@@ -87,7 +87,7 @@ func main() {
 	pong, err := redisClient.Ping().Result()
 	log.Println(pong, err)
 
-	cluster := gocql.NewCluster("13.57.10.233", "52.53.200.196", "18.144.42.11", "54.183.167.29", "13.57.26.145", "13.57.5.151")
+	cluster := gocql.NewCluster("13.56.12.179", "13.57.196.193", "13.57.219.114", "18.144.45.65", "13.56.224.145", "54.183.212.132")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 3
 	cluster.Timeout = 60000 * time.Millisecond
@@ -95,17 +95,13 @@ func main() {
 	cluster.ReconnectInterval = 1 * time.Second
 	cluster.Consistency = 0x01
 	cluster.NumConns = 8
-	// cluster.SocketKeepalive = 10 * time.Second
 	session, err := cluster.CreateSession()
 	if err != nil {
 		log.Print(err)
 	} else {
 		log.Println("Connection successful")
 	}
-	defer func() {
-		session.Close()
-		log.Println("session closed")
-	}()
+	defer session.Close()
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
