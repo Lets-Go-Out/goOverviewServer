@@ -2,10 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
-	"regexp"
 	"time"
 
 	"github.com/go-redis/redis"
@@ -18,62 +17,37 @@ type SessionHandler struct {
 	RedisClient *redis.Client
 }
 
-func getOneById(session *gocql.Session, id string) ([]map[string]interface{}, error) {
-	q := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id)
-	iter := q.Iter()
-	restaurant, sliceErr := iter.SliceMap()
-	if sliceErr != nil {
-		log.Println(sliceErr)
-	}
-	if closeErr := iter.Close(); closeErr != nil {
-		log.Println(closeErr)
-	}
-	q.Release()
-	return restaurant, sliceErr
-}
 func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Request) {
-	regex, _ := regexp.Compile("/api/restaurants/overview/([0-9]{0,})")
-	if regex.MatchString(r.URL.Path) == false {
-		routeErrorHandler(w, r, http.StatusNotFound)
-		return
-	}
-	id := r.URL.Path[len("/api/restaurants/overview/"):]
 	switch r.Method {
 	case http.MethodGet:
+		id := r.URL.Path[len("/api/restaurants/overview/"):]
 		val, redisErr := sh.RedisClient.Get(id).Result()
 		if redisErr != nil || redisErr == redis.Nil {
-			restaurant, dbErr := getOneById(sh.Session, id)
-			if dbErr != nil {
-				w.WriteHeader(http.StatusRequestTimeout)
-				w.Write([]byte(dbErr.Error()))
-				log.Println(dbErr.Error())
-			} else if len(restaurant) == 0 {
-				w.WriteHeader(http.StatusNotFound)
-				w.Write([]byte("Cannot find restaurant with id: " + id))
-			} else {
-				resJSON, jsonErr := json.Marshal(restaurant)
-				if jsonErr != nil {
-					w.WriteHeader(http.StatusNotFound)
-					w.Write([]byte(jsonErr.Error()))
-				} else {
-					err := sh.RedisClient.Set(id, resJSON, 0).Err()
-					if err != nil {
-						log.Println(err)
-					}
-					w.Header().Set("Content-Type", "application/json")
-					w.Write(resJSON)
-				}
-			}
+			go getOneById(sh.Session, id, w, sh.RedisClient)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(val))
 		}
+	case http.MethodPost:
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		log.Println(body)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		var msg map[string]interface{}
+		err = json.Unmarshal(body, &msg)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		go createOne(sh.Session, msg, w)
 	}
 }
-func routeErrorHandler(w http.ResponseWriter, r *http.Request, status int) {
-	w.WriteHeader(status)
-	fmt.Fprint(w, "Not a route, try again")
-}
+
 func main() {
 	config := newrelic.NewConfig("goOverviewService", "bc4034d18b0b4c25d08ad3173e8fc39a28186972")
 	app, err := newrelic.NewApplication(config)
@@ -87,7 +61,7 @@ func main() {
 	pong, err := redisClient.Ping().Result()
 	log.Println(pong, err)
 
-	cluster := gocql.NewCluster("13.56.12.179", "13.57.196.193", "13.57.219.114", "18.144.45.65", "13.56.224.145", "54.183.212.132")
+	cluster := gocql.NewCluster("13.57.186.93", "13.57.216.102", "52.53.190.38", "13.56.13.148", "18.144.74.172", "54.193.12.248")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 3
 	cluster.Timeout = 60000 * time.Millisecond
@@ -104,7 +78,7 @@ func main() {
 	defer session.Close()
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
-	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview", newSessionHandler.cassandraForwarder))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-cbeabceba201153e739d61f39a94004c.txt", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./loaderio/loaderio-cbeabceba201153e739d61f39a94004c.txt")
 	}))
