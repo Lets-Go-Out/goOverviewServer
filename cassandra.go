@@ -2,14 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
-	"net/http"
 
 	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
 )
 
-func getOneById(session *gocql.Session, id string, w http.ResponseWriter, client *redis.Client) {
+func getOneById(session *gocql.Session, client *redis.Client, id string) ([]byte, error) {
 	q := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id)
 	iter := q.Iter()
 	restaurant, sliceErr := iter.SliceMap()
@@ -22,48 +22,41 @@ func getOneById(session *gocql.Session, id string, w http.ResponseWriter, client
 	}
 	q.Release()
 	if sliceErr != nil {
-		w.WriteHeader(http.StatusRequestTimeout)
-		w.Write([]byte(sliceErr.Error()))
-		log.Println(sliceErr.Error())
+		return nil, sliceErr
 	} else if len(restaurant) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Cannot find restaurant with id: " + id))
+		return nil, errors.New("Restaurant not found")
 	} else {
 		resJSON, jsonErr := json.Marshal(restaurant)
 		if jsonErr != nil {
-			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte(jsonErr.Error()))
+			return nil, jsonErr
 		} else {
 			err := client.Set(id, resJSON, 0).Err()
 			if err != nil {
 				log.Println(err)
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(resJSON)
+			return resJSON, nil
+			// w.Header().Set("Content-Type", "application/json")
+			// log.Println(string(resJSON))
+			// w.Write([]byte(resJSON))
 		}
 	}
-	return
 }
-func createOne(session *gocql.Session, restaurant map[string]interface{}, w http.ResponseWriter) {
+func createOne(session *gocql.Session, restaurant map[string]interface{}) error {
 	var increment int
 	var id int
 	if err := session.Query("SELECT increment FROM restaurants.counter WHERE id = 0").Consistency(0x06).Scan(&increment, &id); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+		return err
 	}
-	insertQuery := session.Query("INSERT INTO restaurants.restaurants (id, name, address_line_1, address_line_2, city, state, zip, longitude, latitude, neighborhood, website, description, hours, phone_number, price_range, review_average, review_count, dining_style, cuisine_type, private_dining, executive_chef, dress_code, catering, payment_options, cross_street, promos, public_transit, private_part_fac, private_party_contact, tags) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", id, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["longitude"], restaurant["latitude"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_average"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
+	insertQuery := session.Query("INSERT INTO restaurants.restaurants (id, name, address_line_1, address_line_2, city, state, zip, longitude, latitude, neighborhood, website, description, hours, phone_number, price_range, review_average, review_count, dining_style, cuisine_type, private_dining, executive_chef, dress_code, catering, payment_options, cross_street, promos, public_transit, private_part_fac, private_party_contact, tags) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", id+1, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["longitude"], restaurant["latitude"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_average"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
 	insertErr := insertQuery.Consistency(0x06).Exec()
 	if insertErr != nil {
-		http.Error(w, insertErr.Error(), 500)
-		return
+		return insertErr
 	}
-	updateCounterErr := session.Query("UPDATE restaurants.counter SET increment = ? WHERE id = 0", id).Consistency(0x06).Exec()
+	updateCounterErr := session.Query("UPDATE restaurants.counter SET increment = ? WHERE id = 0", id+7).Consistency(0x06).Exec()
 	if updateCounterErr != nil {
-		http.Error(w, updateCounterErr.Error(), 500)
-		return
+		return updateCounterErr
 	}
-	w.Write([]byte("Document Inserted"))
-	return
+	return nil
 }
 
 // type Message struct {
