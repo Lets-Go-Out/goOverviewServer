@@ -3,13 +3,15 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"strconv"
+	"strings"
 
-	"github.com/go-redis/redis"
 	"github.com/gocql/gocql"
 )
 
-func getOneById(session *gocql.Session, client *redis.Client, id string) ([]byte, error) {
+func getOneById(session *gocql.Session, id string) ([]byte, error) {
 	q := session.Query(`SELECT * FROM restaurants WHERE id = ? LIMIT 1`, id)
 	iter := q.Iter()
 	restaurant, sliceErr := iter.SliceMap()
@@ -30,66 +32,48 @@ func getOneById(session *gocql.Session, client *redis.Client, id string) ([]byte
 		if jsonErr != nil {
 			return nil, jsonErr
 		} else {
-			err := client.Set(id, resJSON, 0).Err()
-			if err != nil {
-				log.Println(err)
-			}
 			return resJSON, nil
-			// w.Header().Set("Content-Type", "application/json")
-			// log.Println(string(resJSON))
-			// w.Write([]byte(resJSON))
 		}
 	}
 }
 func createOne(session *gocql.Session, restaurant map[string]interface{}) error {
-	var increment int
 	var id int
-	if err := session.Query("SELECT increment FROM restaurants.counter WHERE id = 0").Consistency(0x06).Scan(&increment, &id); err != nil {
+	if err := session.Query("SELECT increment FROM restaurants.counter WHERE id = 0").Scan(&id); err != nil {
 		return err
 	}
-	insertQuery := session.Query("INSERT INTO restaurants.restaurants (id, name, address_line_1, address_line_2, city, state, zip, longitude, latitude, neighborhood, website, description, hours, phone_number, price_range, review_average, review_count, dining_style, cuisine_type, private_dining, executive_chef, dress_code, catering, payment_options, cross_street, promos, public_transit, private_part_fac, private_party_contact, tags) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", id+1, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["longitude"], restaurant["latitude"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_average"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
+	//float32(restaurant["longitude"].(float64)), float32(restaurant["latitude"].(float64)),
+	insertQuery := session.Query("INSERT INTO restaurants.restaurants (id, name, address_line_1, address_line_2, city, state, zip, neighborhood, website, description, hours, phone_number, price_range, review_count, dining_style, cuisine_type, private_dining, executive_chef, dress_code, catering, payment_options, cross_street, promos, public_transit, private_part_fac, private_party_contact, tags) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", id+1, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
 	insertErr := insertQuery.Consistency(0x06).Exec()
+	log.Println(id+1, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["longitude"], restaurant["latitude"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_average"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
 	if insertErr != nil {
 		return insertErr
 	}
-	updateCounterErr := session.Query("UPDATE restaurants.counter SET increment = ? WHERE id = 0", id+7).Consistency(0x06).Exec()
+	updateCounterErr := session.Query("UPDATE restaurants.counter SET increment = ? WHERE id = 0", int(id+7)).Exec()
 	if updateCounterErr != nil {
 		return updateCounterErr
 	}
 	return nil
 }
+func updateOne(session *gocql.Session, id string, body []byte) error {
+	var updateStr strings.Builder
+	bodyMap, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	updateStr.Write([]byte("UPDATE restaurants.restaurants SET "))
+	for k, v := range bodyMap {
+		kStr := strconv.Itoa(k)
+		subStr := fmt.Sprintf("%s = %s WHERE id = %s", kStr, string(v), id)
+		updateStr.Write([]byte(subStr))
+	}
+	updateQuery := session.Query(updateStr.String())
+	updateErr := updateQuery.Exec()
+	if updateErr != nil {
+		return updateErr
+	}
+	return nil
+}
 
-// type Message struct {
-// 	id                    int     //`json:"id"`
-// 	created_at            string  //`json:"created_at"`
-// 	name                  string  //`json:"name"`
-// 	address_line_1        string  //`json:"address_line_1"`
-// 	address_line_2        string  //`json:"address_line_2"`
-// 	city                  string  // `json:"city"`
-// 	state                 string  //`json:"state"`
-// 	zip                   string  // `json:"zip"`
-// 	longitude             float32 //`json:"longitude"`
-// 	latitude              float32 //`json:"latitude"`
-// 	neighborhood          string  // `json:"neighborhood"`
-// 	website               string  // `json:"website"`
-// 	description           string  // `json:"description"`
-// 	hours                 string  //`json:"hours"`
-// 	phone_number          string  //`json:"phone_number"`
-// 	price_range           string  //`json:"price_range"`
-// 	review_average        float32 //`json:"review_average"`
-// 	review_count          int     // `json:"review_count"`
-// 	dining_style          string  // `json:"dining_style"`
-// 	cuisine_type          string  // `json:"cuisine_type"`
-// 	private_dining        string  // `json:"private_dining"`
-// 	executive_chef        string  //`json:"executive_chef"`
-// 	dress_code            string  // `json:"dress_code"`
-// 	catering              string  // `json:"catering"`
-// 	payment_options       string  //`json:"payment_options"`
-// 	parking_details       string  //`json:"parking_details"`
-// 	cross_street          string  //`json:"cross_street"`
-// 	promos                string  // `json:"promos"`
-// 	public_transit        string  //`json:"public_transit"`
-// 	private_part_fac      string  //`json:"private_part_fac"`
-// 	private_party_contact string  //`json:"private_party_contact"`
-// 	tags                  string  //`json:"tags"`
-// }
+func deleteOne(session *gocql.Session, id string) error {
+	return session.Query("DELETE * FROM restaurants WHERE id = ?", id).Exec()
+}
