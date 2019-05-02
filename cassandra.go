@@ -16,6 +16,7 @@ func getOneById(session *gocql.Session, id string, w http.ResponseWriter, client
 	if sliceErr != nil {
 		log.Println(sliceErr)
 	}
+	log.Println(restaurant)
 	if closeErr := iter.Close(); closeErr != nil {
 		log.Println(closeErr)
 	}
