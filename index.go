@@ -66,7 +66,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 			if err != nil {
 				w.WriteHeader(http.StatusRequestTimeout)
 				w.Write([]byte(err.Error()))
-				log.Println(err.Error())
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(restaurant)
@@ -84,14 +83,12 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		body, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), 500)
 			return
 		}
 		var msg map[string]interface{}
 		err = json.Unmarshal(body, &msg)
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), 500)
 			return
 		}
@@ -106,14 +103,12 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		defer r.Body.Close()
 		id := r.URL.Path[len("/api/restaurants/overview/"):]
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), 500)
 			return
 		}
 		var msg map[string]interface{}
 		err = json.Unmarshal(body, &msg)
 		if err != nil {
-			log.Println(err)
 			http.Error(w, err.Error(), 500)
 			return
 		}

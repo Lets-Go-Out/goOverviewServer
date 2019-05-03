@@ -57,7 +57,6 @@ func updateOne(session *gocql.Session, id string, body []byte) error {
 	}
 	for k, v := range updateMap {
 		query := session.Query("UPDATE restaurants.restaurants SET "+k+" = ? WHERE id = ?", v, id)
-		log.Println(query)
 		err = query.Exec()
 		if err != nil {
 			return err
