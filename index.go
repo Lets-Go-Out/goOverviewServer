@@ -46,8 +46,8 @@ func main() {
 	defer session.Close()
 	newSessionHandler := &SessionHandler{Session: session, RedisClient: redisClient}
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/api/restaurants/overview/", newSessionHandler.cassandraForwarder))
-	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-cbeabceba201153e739d61f39a94004c.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./loaderio/loaderio-cbeabceba201153e739d61f39a94004c.txt")
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./loaderio/loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt")
 	}))
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./loaderio/loaderio-loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt")
