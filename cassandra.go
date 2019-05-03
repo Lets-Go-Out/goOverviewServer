@@ -37,7 +37,6 @@ func createOne(session *gocql.Session, restaurant map[string]interface{}) error 
 	if err := session.Query("SELECT increment FROM restaurants.counter WHERE id = 0").Scan(&id); err != nil {
 		return err
 	}
-	//float32(restaurant["longitude"].(float64)), float32(restaurant["latitude"].(float64)),
 	insertQuery := session.Query("INSERT INTO restaurants.restaurants (id, name, address_line_1, address_line_2, city, state, zip, neighborhood, website, description, hours, phone_number, price_range, review_count, dining_style, cuisine_type, private_dining, executive_chef, dress_code, catering, payment_options, cross_street, promos, public_transit, private_part_fac, private_party_contact, tags) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", id+1, restaurant["name"], restaurant["address_line_1"], restaurant["address_line_2"], restaurant["city"], restaurant["state"], restaurant["zip"], restaurant["neighborhood"], restaurant["website"], restaurant["description"], restaurant["hours"], restaurant["phone_number"], restaurant["price_range"], restaurant["review_count"], restaurant["dining_style"], restaurant["cuisine_type"], restaurant["private_dining"], restaurant["executive_chef"], restaurant["dress_code"], restaurant["catering"], restaurant["payment_options"], restaurant["cross_street"], restaurant["promos"], restaurant["public_transit"], restaurant["private_part_fac"], restaurant["private_party_contact"], restaurant["tags"])
 	insertErr := insertQuery.Consistency(0x06).Exec()
 	if insertErr != nil {

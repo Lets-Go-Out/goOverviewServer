@@ -1,8 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -33,7 +31,7 @@ func main() {
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 3
 	cluster.Timeout = 60000 * time.Millisecond
-	cluster.ConnectTimeout = 60000 * time.Millisecond
+	// cluster.ConnectTimeout = 60000 * time.Millisecond
 	cluster.ReconnectInterval = 1 * time.Second
 	cluster.Consistency = 0x01
 	cluster.NumConns = 8
@@ -69,66 +67,67 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.Write(restaurant)
-				err := sh.RedisClient.Set(id, restaurant, 0)
-				if err != nil {
-					log.Println(err)
-				}
+				sh.RedisClient.Set(id, restaurant, 0)
+
 			}
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(val))
 		}
 		break
-	case http.MethodPost:
-		body, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		var msg map[string]interface{}
-		err = json.Unmarshal(body, &msg)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		err = createOne(sh.Session, msg)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		w.Write([]byte("Successfully inserted"))
-	case http.MethodPatch:
-		body, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
-		id := r.URL.Path[len("/api/restaurants/overview/"):]
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		var msg map[string]interface{}
-		err = json.Unmarshal(body, &msg)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		updateErr := updateOne(sh.Session, id, body)
-		if updateErr != nil {
-			http.Error(w, updateErr.Error(), 500)
-			return
-		}
-	case http.MethodDelete:
-		id := r.URL.Path[len("/api/restaurants/overview/"):]
-		if id != "the password is password" {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Insufficient Permission"))
-			return
-		}
-		deleteErr := deleteOne(sh.Session, id)
-		if deleteErr != nil {
-			http.Error(w, deleteErr.Error(), 500)
-			return
-		}
+		// case http.MethodPost:
+		// 	body, err := ioutil.ReadAll(r.Body)
+		// 	defer r.Body.Close()
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), 500)
+		// 		return
+		// 	}
+		// 	var msg map[string]interface{}
+		// 	err = json.Unmarshal(body, &msg)
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), 500)
+		// 		return
+		// 	}
+		// 	err = createOne(sh.Session, msg)
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), 500)
+		// 		return
+		// 	}
+		// 	w.Write([]byte("Successfully inserted"))
+		// 	break
+		// case http.MethodPatch:
+		// 	body, err := ioutil.ReadAll(r.Body)
+		// 	defer r.Body.Close()
+		// 	id := r.URL.Path[len("/api/restaurants/overview/"):]
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), 500)
+		// 		return
+		// 	}
+		// 	var msg map[string]interface{}
+		// 	err = json.Unmarshal(body, &msg)
+		// 	if err != nil {
+		// 		http.Error(w, err.Error(), 500)
+		// 		return
+		// 	}
+		// 	updateErr := updateOne(sh.Session, id, body)
+		// 	if updateErr != nil {
+		// 		http.Error(w, updateErr.Error(), 500)
+		// 		return
+		// 	}
+		// 	break
+		// case http.MethodDelete:
+		// 	id := r.URL.Path[len("/api/restaurants/overview/"):]
+		// 	if id != "the password is password" {
+		// 		w.WriteHeader(http.StatusUnauthorized)
+		// 		w.Write([]byte("Insufficient Permission"))
+		// 		return
+		// 	}
+		// 	deleteErr := deleteOne(sh.Session, id)
+		// 	if deleteErr != nil {
+		// 		http.Error(w, deleteErr.Error(), 500)
+		// 		return
+		// 	}
+		// 	break
 	}
 }
 
