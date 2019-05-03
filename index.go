@@ -29,7 +29,7 @@ func main() {
 	})
 	pong, err := redisClient.Ping().Result()
 	log.Println(pong, err)
-	cluster := gocql.NewCluster("13.57.199.237") //, "13.57.216.102", "52.53.190.38", "13.56.13.148", "18.144.74.172", "54.193.12.248")
+	cluster := gocql.NewCluster("13.57.199.237", "13.57.199.59", "13.56.12.5", "13.57.187.238", "54.219.184.104", "54.183.249.183") //, "13.57.216.102", "52.53.190.38", "13.56.13.148", "18.144.74.172", "54.193.12.248")
 	cluster.Keyspace = "restaurants"
 	cluster.ProtoVersion = 3
 	// cluster.Timeout = 60000 * time.Millisecond
@@ -81,7 +81,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		}
 		break
 	case http.MethodPost:
-		log.Println("hello")
 		body, err := ioutil.ReadAll(r.Body)
 		defer r.Body.Close()
 		if err != nil {
@@ -90,7 +89,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		var msg map[string]interface{}
-		log.Println(string(body))
 		err = json.Unmarshal(body, &msg)
 		if err != nil {
 			log.Println(err)
@@ -127,6 +125,7 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 	case http.MethodDelete:
 		id := r.URL.Path[len("/api/restaurants/overview/"):]
 		if id != "the password is password" {
+			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("Insufficient Permission"))
 			return
 		}
@@ -137,19 +136,6 @@ func (sh *SessionHandler) cassandraForwarder(w http.ResponseWriter, r *http.Requ
 		}
 	}
 }
-
-// server ec2-54-215-168-121.us-west-1.compute.amazonaws.com;
-// server ec2-13-56-77-85.us-west-1.compute.amazonaws.com
-// server ec2-18-144-62-109.us-west-1.compute.amazonaws.com;
-// server ec2-52-53-246-139.us-west-1.compute.amazonaws.com;
-// server ec2-18-144-70-226.us-west-1.compute.amazonaws.com;
-// server ec2-54-219-170-43.us-west-1.compute.amazonaws.com;
-// server ec2-13-57-219-171.us-west-1.compute.amazonaws.com;
-// server ec2-52-53-129-248.us-west-1.compute.amazonaws.com;
-
-// cd goOverviewServer && git fetch --all && git reset --hard origin/master && go build && ./goOverviewServer
-
-// cd goOverviewServer && ./goOverviewServer
 
 // const rest = {address_line_1: "31346 Wehner Plaza",
 // address_line_2: "Apt. 049",
