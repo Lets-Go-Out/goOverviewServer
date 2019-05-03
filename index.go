@@ -49,8 +49,8 @@ func main() {
 	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-cbeabceba201153e739d61f39a94004c.txt", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./loaderio/loaderio-cbeabceba201153e739d61f39a94004c.txt")
 	}))
-	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-04ab469c903d910e3e638cc4ebc4a326.txt", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./loaderio/loaderio-04ab469c903d910e3e638cc4ebc4a326.txt")
+	http.HandleFunc(newrelic.WrapHandleFunc(app, "/loaderio-loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./loaderio/loaderio-loaderio-0a2f1a7cf7e88afe8316e5618805739c.txt")
 	}))
 	http.Handle(newrelic.WrapHandle(app, "/", http.FileServer(http.Dir("./static"))))
 
